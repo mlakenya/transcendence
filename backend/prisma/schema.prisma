@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id					String		  @unique @id @default(uuid())
+  createdAt				DateTime	  @default(now())
+  updatedAt				DateTime?	  @updatedAt
+  username				String		  @unique @db.VarChar(50)
+  password				String?		  @db.VarChar(250)
+  first_name			String?		  @db.VarChar(50)
+  last_name				String?		  @db.VarChar(50)
+  fortytwo_id			String		  @unique @db.VarChar(15)
+  status				String		  @db.VarChar(20)
+  profilePic			String?		  @db.VarChar(50)
+  twoFAEnabled			Boolean		  @db.Boolean @default(false)
+  googleSecret			String		  @db.VarChar(50)
+  ranking				Int			  @default(0)
+  winsNumber			Int			  @default(0)
+  loosesNumber			Int			  @default(0)
+  member_chats			ChatToken[]
+  messages				Message[]
+  friends				Friendship[]
+
+  @@unique([id, username, fortytwo_id])
+}
+
+model Friendship {
+  id					Int			  @id @default(autoincrement())
+  createdAt				DateTime	  @default(now())
+
+  userId				String
+  user					User		  @relation(fields: [userId], references: [id])
+  friendID				String
+  blocked				Boolean		  @default(false)	
+}
+
+model ChatToken {
+	id				Int			@id @default(autoincrement())
+	chat			Chat		@relation(fields: [chatid], references: [id])
+	user			User		@relation(fields: [userid], references: [id])
+	chatid			Int			
+	userid			String
+	inchat			Boolean		@default(false)
+	admin			Boolean		@default(false)
+	muted			Boolean		@default(false)
+	banned			Boolean		@default(false)
+
+	@@unique([chatid, userid])
+}
+
+model Chat {
+  id				Int			@unique @id @default(autoincrement())
+  name				String		@unique
+  private			Boolean		@default(false)		  
+  password			String?
+  ownerid			String	
+  members			ChatToken[]
+  createdAt			DateTime    @default(now())
+  updatedAt			DateTime?   @updatedAt
+  messages			Message[]
+  group				Boolean		@default(false)
+}
+
+
+model AuthToken {
+	token			String		@db.VarChar(250)
+	userID			String		@unique @db.VarChar(50)
+}
+model Message {
+	id				Int	  		@id @default(autoincrement())
+	body			String
+	createdAt		DateTime	@default(now())
+	inChat			Chat		@relation(fields: [chatid], references: [id])
+	fromUser		User		@relation(fields: [userid], references: [id])	
+	chatid			Int
+	userid			String
+}
+
+enum Status {
+	ONLINE
+	OFFLINE
+}
+
+enum Position {
+	ADMIN
+	MEMBER
+}
+
+enum TIG {
+	NONE
+	BANED
+	MUTED
+}
